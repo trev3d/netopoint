@@ -1,0 +1,62 @@
+#pragma kernel CSMain
+#pragma kernel Apply
+#pragma use_dxc
+
+#define CLEAR 18446744069414584320
+
+Texture2D<float4> points;
+RWStructuredBuffer<uint64_t> intBuffer;
+RWTexture2D<float4> display;
+int2 displaySize;
+float4x4 camera;
+
+uint DisplayCoordsToIndex(uint2 displayCoords)
+{
+    return displayCoords.x + displayCoords.y * displaySize.x;
+}
+
+[numthreads(8, 8, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float3 pos = points[id.xy].xyz;
+	 
+    float4 hcs = mul(camera, float4(points[id.xy].xyz, 1));
+    float3 ndc = (hcs.xyz / hcs.w);
+	
+    ndc.xy = ndc.xy * 0.5 + 0.5;
+    
+    if (ndc.z < 0 || ndc.x < 0 || ndc.x > 1 || ndc.y < 0 || ndc.y > 1)
+        return;
+    
+    uint2 i = ndc.xy * displaySize;
+	
+    uint r, g, b;
+    r = uint(pos.x * 255) << 16;
+    g = uint(pos.y * 255) << 8;
+    b = uint(pos.z * 255) << 0;
+	
+    uint64_t depth = asuint(hcs.w);
+    uint64_t p = (depth << 32) | r | g | b;
+	
+    uint index = DisplayCoordsToIndex(i);
+    if (p < intBuffer[index])
+        InterlockedMin(intBuffer[index], p);
+}
+
+[numthreads(8, 8, 1)]
+void Apply(uint3 id : SV_DispatchThreadID)
+{
+    uint index = DisplayCoordsToIndex(id.xy);
+    uint64_t p = intBuffer[index];
+    uint col = (uint) p;
+	
+    float r, g, b;
+    r = (0x000000FF & (col >> 16)) / 255.0;
+    g = (0x000000FF & (col >> 8)) / 255.0;
+    b = (0x000000FF & (col >> 0)) / 255.0;
+	
+    float4 color = float4(r, g, b, p != CLEAR);
+	
+    display[id.xy] = color;
+    intBuffer[index] = CLEAR;
+}
