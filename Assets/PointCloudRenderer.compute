@@ -5,10 +5,13 @@
 #define CLEAR 18446744069414584320
 
 Texture2D<float4> points;
+Texture2D<float4> colors;
 RWStructuredBuffer<uint64_t> intBuffer;
 RWTexture2D<float4> display;
+RWTexture2D<float> depth;
 int2 displaySize;
 float4x4 camera;
+#define PIXELSIZE 3
 
 uint DisplayCoordsToIndex(uint2 displayCoords)
 {
@@ -18,29 +21,44 @@ uint DisplayCoordsToIndex(uint2 displayCoords)
 [numthreads(8, 8, 1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    float3 pos = points[id.xy].xyz;
+	float3 pos = points[id.xy].xyz;
 	 
-    float4 hcs = mul(camera, float4(points[id.xy].xyz, 1));
-    float3 ndc = (hcs.xyz / hcs.w);
+	float4 hcs = mul(camera, float4(points[id.xy].xyz, 1));
+	float3 ndc = (hcs.xyz / hcs.w);
 	
-    ndc.xy = ndc.xy * 0.5 + 0.5;
+	ndc.xy = ndc.xy * 0.5 + 0.5;
     
-    if (ndc.z < 0 || ndc.x < 0 || ndc.x > 1 || ndc.y < 0 || ndc.y > 1)
-        return;
+	if (ndc.z < 0 || ndc.x < 0 || ndc.x > 1 || ndc.y < 0 || ndc.y > 1)
+		return;
     
-    uint2 i = ndc.xy * displaySize;
+	uint2 i = ndc.xy * displaySize;
 	
-    uint r, g, b;
-    r = uint(pos.x * 255) << 16;
-    g = uint(pos.y * 255) << 8;
-    b = uint(pos.z * 255) << 0;
+	float3 color = colors[id.xy].rgb;
 	
-    uint64_t depth = asuint(hcs.w);
-    uint64_t p = (depth << 32) | r | g | b;
+	uint r, g, b;
+	r = uint(color.r * 255) << 16;
+	g = uint(color.b * 255) << 8;
+	b = uint(color.g * 255) << 0;
 	
-    uint index = DisplayCoordsToIndex(i);
-    if (p < intBuffer[index])
-        InterlockedMin(intBuffer[index], p);
+	uint64_t depth = asuint(1 - (hcs.z / hcs.w));
+	uint64_t p = (depth << 32) | r | g | b;
+	
+	uint pixHalf = PIXELSIZE / 2;
+	for (int x = 0; x < PIXELSIZE; x++)
+	{
+		for (int y = 0; y < PIXELSIZE; y++)
+		{
+			uint index = DisplayCoordsToIndex(i + uint2(x - pixHalf, y - pixHalf));
+			
+			if (p < intBuffer[index])
+			{
+				
+				InterlockedMin(intBuffer[index], p);	
+			}
+				// intBuffer[index] = p;
+		}
+
+	}
 }
 
 [numthreads(8, 8, 1)]
@@ -50,13 +68,17 @@ void Apply(uint3 id : SV_DispatchThreadID)
     uint64_t p = intBuffer[index];
     uint col = (uint) p;
 	
-    float r, g, b;
+    float r, g, b, z;
     r = (0x000000FF & (col >> 16)) / 255.0;
     g = (0x000000FF & (col >> 8)) / 255.0;
     b = (0x000000FF & (col >> 0)) / 255.0;
+	// int zuint = col >> 32; 
+	z = (1 - asfloat(uint(p >> 32))); 
+	// z = 0.5f;
 	
     float4 color = float4(r, g, b, p != CLEAR);
 	
     display[id.xy] = color;
+	depth[id.xy] = z;
     intBuffer[index] = CLEAR;
 }

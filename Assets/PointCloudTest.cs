@@ -21,6 +21,6 @@ public class CloudTest : MonoBehaviour
 
         points.Apply();
 
-        GetComponent<PointCloudRenderer>().SetPoints(points);
+        GetComponent<PointCloudRenderer>().SetPoints(points, null);
 	}
 }
