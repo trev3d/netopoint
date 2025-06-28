@@ -10,7 +10,8 @@ RWStructuredBuffer<uint64_t> intBuffer;
 RWTexture2D<float4> display;
 RWTexture2D<float> depth;
 int2 displaySize;
-float4x4 camera;
+int4 drawRegion;
+bool stereo;
 #define PIXELSIZE 3
 
 uint DisplayCoordsToIndex(uint2 displayCoords)
@@ -22,7 +23,7 @@ uint DisplayCoordsToIndex(uint2 displayCoords)
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
 	float3 pos = points[id.xy].xyz;
-	 
+	
 	float4 hcs = mul(camera, float4(points[id.xy].xyz, 1));
 	float3 ndc = (hcs.xyz / hcs.w);
 	

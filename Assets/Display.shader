@@ -26,12 +26,16 @@ Shader "Custom/Display"
 			struct Attributes
 			{
 				float4 positionOS   : POSITION;
+
+				UNITY_VERTEX_INPUT_INSTANCE_ID 
 			};
 
 			struct Varyings
 			{
 				float4 positionHCS  : SV_POSITION;
 				float4 positionSS   : TEXCOORD0;
+
+				UNITY_VERTEX_OUTPUT_STEREO
 			};
 
 			struct Output {
@@ -47,6 +51,11 @@ Shader "Custom/Display"
 			Varyings vert(Attributes IN)
 			{
 				Varyings OUT;
+
+				UNITY_SETUP_INSTANCE_ID(IN);
+				// UNITY_INITIALIZE_OUTPUT(IN, OUT);
+				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+
 				OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
 				OUT.positionSS  = ComputeScreenPos(OUT.positionHCS);
 				return OUT;

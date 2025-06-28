@@ -18,7 +18,10 @@ public class PointCloudRenderer : MonoBehaviour
 	private int displayID     = Shader.PropertyToID("display");
 	private int depthID       = Shader.PropertyToID("depth");
 	private int displaySizeID = Shader.PropertyToID("displaySize");
-	private int cameraID      = Shader.PropertyToID("camera");
+	private int modelID       = Shader.PropertyToID("model");
+	private int viewProjID    = Shader.PropertyToID("viewProj");
+	private int drawRegionID  = Shader.PropertyToID("drawRegion");
+	private bool setup = false;
 
 	[SerializeField] private Material material;
 
@@ -37,14 +40,15 @@ public class PointCloudRenderer : MonoBehaviour
 
 	private void InitDisplayTex()
 	{
-		int eyeWidth = camera.pixelWidth;
-		if(stereoRendering)
-			eyeWidth /= 2;
+		Vector2Int s = new(camera.pixelWidth, camera.pixelHeight);
+		int bufferSize = s.x * s.y;
+		if (bufferSize == 0)
+			return;
 
-		intBuffer = new ComputeBuffer(eyeWidth * camera.pixelHeight, sizeof(UInt64), ComputeBufferType.Default);
-		display = new RenderTexture(eyeWidth, camera.pixelHeight, 0, GraphicsFormat.R8G8B8A8_UNorm);
+		intBuffer = new ComputeBuffer(bufferSize, sizeof(UInt64), ComputeBufferType.Default);
+		display = new RenderTexture(s.x, s.y, 0, GraphicsFormat.R8G8B8A8_UNorm);
 		display.enableRandomWrite = true;
-		depth = new RenderTexture(eyeWidth, camera.pixelHeight, 0, GraphicsFormat.R16_UNorm);
+		depth = new RenderTexture(s.x, s.y, 0, GraphicsFormat.R16_UNorm);
 		depth.enableRandomWrite = true;
 
 		shader.SetBuffer(0, intBufferID, intBuffer);
@@ -56,6 +60,9 @@ public class PointCloudRenderer : MonoBehaviour
 
 		material.SetTexture("_MainTex", display);
 		material.SetTexture("_DepthTex", depth);
+
+		stereoRendering = XRSettings.isDeviceActive;
+		setup = true;
 	}
 
 	public void SetPoints(Texture2D points, Texture2D colors)
@@ -84,16 +91,23 @@ public class PointCloudRenderer : MonoBehaviour
 		if (points == null)
 			return;
 
-		if(stereoRendering != XRSettings.isDeviceActive)
+		if (!setup ||
+			stereoRendering != XRSettings.isDeviceActive ||
+			display.width < camera.pixelWidth || display.height < camera.pixelHeight)
 		{
-			stereoRendering = XRSettings.isDeviceActive;
 			InitDisplayTex();
+
+			if (!setup)
+				return;
 		}
 
-		
-		Matrix4x4 cameraMat = GL.GetGPUProjectionMatrix(camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left), false) * camera.worldToCameraMatrix;
-		cameraMat = cameraMat * transform.localToWorldMatrix;
-		shader.SetMatrix(cameraID, cameraMat);
+		Matrix4x4[] viewProj = new Matrix4x4[2];
+		Matrix4x4 l = camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
+		Matrix4x4 r = camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
+		viewProj[0] = GL.GetGPUProjectionMatrix(l, false) * camera.worldToCameraMatrix;
+		viewProj[1] = GL.GetGPUProjectionMatrix(r, false) * camera.worldToCameraMatrix;
+		shader.SetMatrixArray(viewProjID, viewProj);
+		shader.SetInt(drawRegionID, stereoRendering ? 2 : 1);
 
 		var s = shaderGroups;
 
