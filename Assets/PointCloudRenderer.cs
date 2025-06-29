@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
 using UnityEngine.XR;
 
 public class PointCloudRenderer : MonoBehaviour
@@ -9,7 +11,7 @@ public class PointCloudRenderer : MonoBehaviour
 	private Texture2D colors;
 	private ComputeBuffer intBuffer;
 	private RenderTexture display;
-	private RenderTexture depth;
+	private RenderTexture zDepth;
 	[SerializeField] private ComputeShader shader;
 	private (int x, int y, int z) shaderGroups;
 	private int pointsID      = Shader.PropertyToID("points");
@@ -20,13 +22,15 @@ public class PointCloudRenderer : MonoBehaviour
 	private int displaySizeID = Shader.PropertyToID("displaySize");
 	private int modelID       = Shader.PropertyToID("model");
 	private int viewProjID    = Shader.PropertyToID("viewProj");
-	private int drawRegionID  = Shader.PropertyToID("drawRegion");
+	private int eyeIndexID    = Shader.PropertyToID("eyeIndex");
 	private bool setup = false;
 
 	[SerializeField] private Material material;
 
 	private new Camera camera;
 	private bool stereoRendering = false;
+
+	private List<XRDisplaySubsystem> xrDisplays = new();
 
 	private void Awake()
 	{
@@ -40,43 +44,55 @@ public class PointCloudRenderer : MonoBehaviour
 
 	private void InitDisplayTex()
 	{
-		Vector2Int s = new(camera.pixelWidth, camera.pixelHeight);
-		int bufferSize = s.x * s.y;
+		stereoRendering = XRSettings.isDeviceActive;
+
+		Vector2Int displaySize = GetDisplaySize();
+
+		int bufferSize = displaySize.x * displaySize.y;
 		if (bufferSize == 0)
 			return;
 
 		intBuffer = new ComputeBuffer(bufferSize, sizeof(UInt64), ComputeBufferType.Default);
-		display = new RenderTexture(s.x, s.y, 0, GraphicsFormat.R8G8B8A8_UNorm);
-		display.enableRandomWrite = true;
-		depth = new RenderTexture(s.x, s.y, 0, GraphicsFormat.R16_UNorm);
-		depth.enableRandomWrite = true;
+
+		RenderTextureDescriptor desc = new()
+		{
+			width = displaySize.x,
+			height = displaySize.y,
+			volumeDepth = stereoRendering ? 2 : 1,
+			graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm,
+			enableRandomWrite = true,
+			dimension = TextureDimension.Tex2DArray,
+			msaaSamples = 1,
+		};
+
+		display = new RenderTexture(desc);
+		desc.graphicsFormat = GraphicsFormat.R16_UNorm;
+		zDepth = new RenderTexture(desc);
 
 		shader.SetBuffer(0, intBufferID, intBuffer);
 		shader.SetBuffer(1, intBufferID, intBuffer);
-		shader.SetTexture(1, depthID, depth);
+		shader.SetBuffer(2, intBufferID, intBuffer);
+
+		shader.SetTexture(1, depthID, zDepth);
 		shader.SetTexture(1, displayID, display);
+		
 		shader.SetInts(displaySizeID, display.width, display.height);
 		shader.SetInts(displaySizeID, display.width, display.height);
 
 		material.SetTexture("_MainTex", display);
-		material.SetTexture("_DepthTex", depth);
+		material.SetTexture("_DepthTex", zDepth);
 
-		stereoRendering = XRSettings.isDeviceActive;
 		setup = true;
 	}
 
 	public void SetPoints(Texture2D points, Texture2D colors)
 	{
-		//if (points.graphicsFormat != GraphicsFormat.R32G32B32A32_SFloat)
-		//	throw new Exception($"Texture format must be {nameof(GraphicsFormat.R32G32B32A32_SFloat)}");
-
 		if (points.width != colors.width || points.height != colors.height)
-		{
 			throw new Exception("point and color textures must be same size!");
-		}
 
 		this.points = points;
 		this.colors = colors;
+
 		shader.SetTexture(0, pointsID, points);
 		shader.SetTexture(0, colorsID, colors);
 
@@ -86,14 +102,32 @@ public class PointCloudRenderer : MonoBehaviour
 		shaderGroups = ((int)x, (int)y, 1);
 	}
 
+	private Vector2Int GetDisplaySize()
+	{
+		if (XRSettings.isDeviceActive)
+		{
+			SubsystemManager.GetSubsystems(xrDisplays);
+			Vector2Int displaySize = new(camera.pixelWidth, camera.pixelHeight);
+			if (xrDisplays.Count > 0 && xrDisplays[0].GetRenderPassCount() > 0)
+			{
+				xrDisplays[0].GetRenderPass(0, out XRDisplaySubsystem.XRRenderPass renderPass);
+				return new Vector2Int(renderPass.renderTargetDesc.width, renderPass.renderTargetDesc.height);
+			}
+		}
+
+		return new Vector2Int(camera.pixelWidth, camera.pixelHeight);
+	}
+
 	private void Update()
 	{
 		if (points == null)
 			return;
 
+		Vector2Int displaySize = GetDisplaySize();
+
 		if (!setup ||
 			stereoRendering != XRSettings.isDeviceActive ||
-			display.width < camera.pixelWidth || display.height < camera.pixelHeight)
+			display.width != displaySize.x || display.height != displaySize.y)
 		{
 			InitDisplayTex();
 
@@ -101,18 +135,27 @@ public class PointCloudRenderer : MonoBehaviour
 				return;
 		}
 
-		Matrix4x4[] viewProj = new Matrix4x4[2];
-		Matrix4x4 l = camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Left);
-		Matrix4x4 r = camera.GetStereoProjectionMatrix(Camera.StereoscopicEye.Right);
-		viewProj[0] = GL.GetGPUProjectionMatrix(l, false) * camera.worldToCameraMatrix;
-		viewProj[1] = GL.GetGPUProjectionMatrix(r, false) * camera.worldToCameraMatrix;
-		shader.SetMatrixArray(viewProjID, viewProj);
-		shader.SetInt(drawRegionID, stereoRendering ? 2 : 1);
+		Matrix4x4 viewProj = camera.projectionMatrix;
 
-		var s = shaderGroups;
+		for (int i = 0; i < (stereoRendering ? 2 : 1); i++)
+		{
+			shader.Dispatch(2, Mathf.CeilToInt(intBuffer.count / 64), 1, 1);
 
-		shader.Dispatch(0, Mathf.CeilToInt(points.width / s.x), Mathf.CeilToInt(points.height / s.y), 1);
-		shader.Dispatch(1, Mathf.CeilToInt(display.width / s.x), Mathf.CeilToInt(display.height / s.y), 1);
+			if (stereoRendering)
+			{
+				var eye = i == 1 ? Camera.StereoscopicEye.Right : Camera.StereoscopicEye.Left;
+				viewProj = camera.GetStereoProjectionMatrix(eye);
+			}
+
+			var s = shaderGroups;
+			viewProj = GL.GetGPUProjectionMatrix(viewProj, false) * camera.worldToCameraMatrix;
+			shader.SetMatrix(modelID, transform.localToWorldMatrix);
+			shader.SetMatrix(viewProjID, viewProj);
+			shader.SetInt(eyeIndexID, i);
+
+			shader.Dispatch(0, Mathf.CeilToInt(points.width / s.x), Mathf.CeilToInt(points.height / s.y), 1);
+			shader.Dispatch(1, Mathf.CeilToInt(display.width / s.x), Mathf.CeilToInt(display.height / s.y), 1);
+		}
 	}
 
 	private void OnDestroy()

@@ -1,5 +1,6 @@
 #pragma kernel CSMain
 #pragma kernel Apply
+#pragma kernel Clear
 #pragma use_dxc
 
 #define CLEAR 18446744069414584320
@@ -7,12 +8,13 @@
 Texture2D<float4> points;
 Texture2D<float4> colors;
 RWStructuredBuffer<uint64_t> intBuffer;
-RWTexture2D<float4> display;
-RWTexture2D<float> depth;
+RWTexture2DArray<float4> display;
+RWTexture2DArray<float> depth;
 int2 displaySize;
-int4 drawRegion;
-bool stereo;
-#define PIXELSIZE 3
+int eyeIndex;
+float4x4 model;
+float4x4 viewProj;
+#define PIXELSIZE 5
 
 uint DisplayCoordsToIndex(uint2 displayCoords)
 {
@@ -24,7 +26,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
 	float3 pos = points[id.xy].xyz;
 	
-	float4 hcs = mul(camera, float4(points[id.xy].xyz, 1));
+	float4 hcs = mul(viewProj, mul(model, float4(points[id.xy].xyz, 1)));
 	float3 ndc = (hcs.xyz / hcs.w);
 	
 	ndc.xy = ndc.xy * 0.5 + 0.5;
@@ -52,13 +54,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 			uint index = DisplayCoordsToIndex(i + uint2(x - pixHalf, y - pixHalf));
 			
 			if (p < intBuffer[index])
-			{
-				
 				InterlockedMin(intBuffer[index], p);	
-			}
-				// intBuffer[index] = p;
 		}
-
 	}
 }
 
@@ -73,13 +70,17 @@ void Apply(uint3 id : SV_DispatchThreadID)
     r = (0x000000FF & (col >> 16)) / 255.0;
     g = (0x000000FF & (col >> 8)) / 255.0;
     b = (0x000000FF & (col >> 0)) / 255.0;
-	// int zuint = col >> 32; 
+	
 	z = (1 - asfloat(uint(p >> 32))); 
-	// z = 0.5f;
 	
     float4 color = float4(r, g, b, p != CLEAR);
 	
-    display[id.xy] = color;
-	depth[id.xy] = z;
-    intBuffer[index] = CLEAR;
+	display[uint3(id.xy, eyeIndex)] = color;
+	depth[uint3(id.xy, eyeIndex)] = z;
+}
+
+[numthreads(64, 1, 1)]
+void Clear(uint id : SV_DispatchThreadID)
+{
+	intBuffer[id] = CLEAR;
 }

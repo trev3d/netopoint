@@ -2,8 +2,8 @@ Shader "Custom/Display"
 {
 	Properties
 	{
-		[MainTexture] _MainTex("MainTex", 2D) = "white" {}
-		_DepthTex("DepthTex", 2D) = "white" {}
+		[MainTexture] _MainTex("MainTex", 2DArray) = "white" {}
+		_DepthTex("DepthTex", 2DArray) = "white" {}
 	}
 
 	// Universal Render Pipeline subshader. If URP is installed this will be used.
@@ -44,8 +44,8 @@ Shader "Custom/Display"
 			};
 
 
-			TEXTURE2D(_MainTex);
-			TEXTURE2D(_DepthTex);
+			TEXTURE2D_ARRAY(_MainTex);
+			TEXTURE2D_ARRAY(_DepthTex);
 			SAMPLER(sampler_MainTex);
 
 			Varyings vert(Attributes IN)
@@ -65,9 +65,12 @@ Shader "Custom/Display"
 			{
 				Output OUT;
 
+				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
+
 				half2 uv = IN.positionSS.xy / IN.positionSS.w;
-				OUT.color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
-				OUT.depth = SAMPLE_TEXTURE2D(_DepthTex, sampler_MainTex, uv);
+				uv.y = 1 - uv.y;
+				OUT.color = SAMPLE_TEXTURE2D_ARRAY(_MainTex , sampler_MainTex, uv, unity_StereoEyeIndex);
+				OUT.depth = SAMPLE_TEXTURE2D_ARRAY(_DepthTex, sampler_MainTex, uv, unity_StereoEyeIndex);
 
 				return OUT;
 			}
