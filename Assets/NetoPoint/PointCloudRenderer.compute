@@ -57,6 +57,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 			uint index = DisplayCoordsToIndex(i + uint2(x - pixHalf, y - pixHalf));
 			
 			if (p < intBuffer[index])
+				//intBuffer[index] = p;
 				InterlockedMin(intBuffer[index], p);	
 		}
 	}

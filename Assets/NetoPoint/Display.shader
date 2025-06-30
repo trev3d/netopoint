@@ -6,7 +6,6 @@ Shader "Custom/Display"
 		_DepthTex("DepthTex", 2DArray) = "white" {}
 	}
 
-	// Universal Render Pipeline subshader. If URP is installed this will be used.
 	SubShader
 	{
 		Tags { "RenderType"="Opaque" }
@@ -43,7 +42,6 @@ Shader "Custom/Display"
 				float depth : SV_Depth;
 			};
 
-
 			TEXTURE2D_ARRAY(_MainTex);
 			TEXTURE2D_ARRAY(_DepthTex);
 			SAMPLER(sampler_MainTex);
@@ -67,10 +65,8 @@ Shader "Custom/Display"
 
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
-				half2 uv = IN.positionSS.xy / IN.positionSS.w;
-				// uv.y = 1 - uv.y;
+				float2 uv = IN.positionSS.xy / IN.positionSS.w;
 				OUT.color = SAMPLE_TEXTURE2D_ARRAY(_MainTex , sampler_MainTex, uv, unity_StereoEyeIndex);
-				// OUT.color.b *= unity_StereoEyeIndex;
 				OUT.depth = SAMPLE_TEXTURE2D_ARRAY(_DepthTex, sampler_MainTex, uv, unity_StereoEyeIndex);
 
 				return OUT;
