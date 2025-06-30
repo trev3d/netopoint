@@ -1,4 +1,4 @@
-                        -HC:\Users\jt\source\netopoint\Library\PramData\AndroidApplicationController\Cache\com.UnityTechnologies.com.unity.template.urpblank\gradle-project\unityLibrary\src\main\cpp
+                        -HC:\Users\jt\source\netopoint\Library\PramData\AndroidApplicationController\Cache\com.DefaultCompany.netopoint\gradle-project\unityLibrary\src\main\cpp
 -DCMAKE_SYSTEM_NAME=Android
 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 -DCMAKE_SYSTEM_VERSION=32
@@ -9,8 +9,8 @@
 -DCMAKE_ANDROID_NDK=C:\Program Files\Unity\Hub\Editor\6000.0.51f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK
 -DCMAKE_TOOLCHAIN_FILE=C:\Program Files\Unity\Hub\Editor\6000.0.51f1\Editor\Data\PlaybackEngines\AndroidPlayer\NDK\build\cmake\android.toolchain.cmake
 -DCMAKE_MAKE_PROGRAM=C:\Program Files\Unity\Hub\Editor\6000.0.51f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\cmake\3.22.1\bin\ninja.exe
--DCMAKE_LIBRARY_OUTPUT_DIRECTORY=C:\Users\jt\source\netopoint\Library\PramData\AndroidApplicationController\Cache\com.UnityTechnologies.com.unity.template.urpblank\gradle-project\unityLibrary\build\intermediates\cxx\Debug\q3u593t1\obj\arm64-v8a
--DCMAKE_RUNTIME_OUTPUT_DIRECTORY=C:\Users\jt\source\netopoint\Library\PramData\AndroidApplicationController\Cache\com.UnityTechnologies.com.unity.template.urpblank\gradle-project\unityLibrary\build\intermediates\cxx\Debug\q3u593t1\obj\arm64-v8a
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=C:\Users\jt\source\netopoint\Library\PramData\AndroidApplicationController\Cache\com.DefaultCompany.netopoint\gradle-project\unityLibrary\build\intermediates\cxx\Debug\q3u593t1\obj\arm64-v8a
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=C:\Users\jt\source\netopoint\Library\PramData\AndroidApplicationController\Cache\com.DefaultCompany.netopoint\gradle-project\unityLibrary\build\intermediates\cxx\Debug\q3u593t1\obj\arm64-v8a
 -DCMAKE_BUILD_TYPE=Debug
 -DCMAKE_FIND_ROOT_PATH=C:\Users\jt\source\netopoint\.utmp\Debug\q3u593t1\prefab\arm64-v8a\prefab
 -BC:\Users\jt\source\netopoint\.utmp\Debug\q3u593t1\arm64-v8a

@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/jt/source/netopoint/Library/PramData/AndroidApplicationController/Cache/com.UnityTechnologies.com.unity.template.urpblank/gradle-project/unityLibrary/src/main/cpp
+# Install script for directory: C:/Users/jt/source/netopoint/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.netopoint/gradle-project/unityLibrary/src/main/cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,6 +45,7 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("C:/Users/jt/source/netopoint/.utmp/Debug/q3u593t1/arm64-v8a/GameActivity/cmake_install.cmake")
+  include("C:/Users/jt/source/netopoint/.utmp/Debug/q3u593t1/arm64-v8a/FramePacing/cmake_install.cmake")
 
 endif()
 

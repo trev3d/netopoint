@@ -1,10 +1,12 @@
 # ninja log v5
-18	1024	7727624523549427	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	4ea8675594802819
-12	1030	7727624523625966	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	22c1c52b7a2a2296
-24	1039	7727624523702106	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	7d77bac645f83372
-41	1043	7727624523753122	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	b4cb0efb6c62764
-6	1051	7727624523819319	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	103b8e4a7c818e0a
-29	1111	7727624524412225	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	b80b183ac3854f3b
-0	1154	7727624524825050	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	f0ac757b96681a76
-35	1192	7727624525224488	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	d9dce22938fc05da
-1192	1273	7727624526046717	C:/Users/jt/source/netopoint/Library/PramData/AndroidApplicationController/Cache/com.UnityTechnologies.com.unity.template.urpblank/gradle-project/unityLibrary/build/intermediates/cxx/Debug/q3u593t1/obj/arm64-v8a/libgame.so	829a611fbc770f9c
+16	87	7730114943215473	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	c03c66ed401cfb97
+88	162	7730114943925190	C:/Users/jt/source/netopoint/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.netopoint/gradle-project/unityLibrary/build/intermediates/cxx/Debug/q3u593t1/obj/arm64-v8a/libswappywrapper.so	55432f0d943c8058
+1	586	7730114948165302	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	151c4da6b4327dc1
+25	608	7730114948377669	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	d10b3e890947eb97
+5	609	7730114948387669	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	1d0a0626a1cc65af
+21	629	7730114948579350	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	a9300dae825ed29b
+36	644	7730114948746382	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	e72e8e3cb37a8f83
+11	650	7730114948786589	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	d855e7e1c47c3a22
+30	673	7730114949018267	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	e475317ae221ed30
+8	719	7730114949463916	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	4bd1a753ff667573
+720	786	7730114950144098	C:/Users/jt/source/netopoint/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.netopoint/gradle-project/unityLibrary/build/intermediates/cxx/Debug/q3u593t1/obj/arm64-v8a/libgame.so	d99e4d891731ecc3
