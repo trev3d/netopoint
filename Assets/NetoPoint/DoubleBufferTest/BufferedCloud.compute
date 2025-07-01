@@ -1,0 +1,49 @@
+#pragma kernel Start
+#pragma kernel Update
+
+Texture2D<float4> points;
+RWTexture2D<float4> prevFrame;
+RWTexture2D<float4> nextFrame;
+int2 displaySize;
+int eyeIndex;
+float4x4 model;
+float4x4 viewProj;
+#define PIXELSIZE 5
+
+[numthreads(8, 8, 1)]
+void Start(uint3 id : SV_DispatchThreadID)
+{
+	float3 pos = points[id.xy].xyz;
+	
+	float4 hcs = mul(viewProj, mul(model, float4(pos, 1)));
+	float3 ndc = (hcs.xyz / hcs.w);
+	
+	ndc.xy = ndc.xy * 0.5 + 0.5;
+    
+	if (ndc.z < 0 || ndc.x < 0 || ndc.x > 1 || ndc.y < 0 || ndc.y > 1)
+		return;
+    
+	uint2 i = ndc.xy * displaySize;
+	
+	prevFrame[i] = float4(pos.xyz, 1);
+}
+
+[numthreads(8, 8, 1)]
+void Update(uint3 id : SV_DispatchThreadID)
+{
+	float3 pos = prevFrame[id.xy].xyz;
+	
+	float4 hcs = mul(viewProj, mul(model, float4(pos, 1)));
+	float3 ndc = (hcs.xyz / hcs.w);
+	
+	ndc.xy = ndc.xy * 0.5 + 0.5;
+    
+	if (ndc.z < 0 || ndc.x < 0 || ndc.x > 1 || ndc.y < 0 || ndc.y > 1)
+		return;
+    
+	uint2 i = ndc.xy * displaySize;
+	
+	nextFrame[i] = float4(pos.xyz, 1);
+	
+	prevFrame[id.xy] = 0;
+}

@@ -1,12 +1,10 @@
-Shader "Custom/DisplayWorking"
+Shader "Custom/BufferedCloudDisplay"
 {
 	Properties
 	{
-		_MainTex("MainTex", 2DArray) = "white" {}
-		_DepthTex("DepthTex", 2DArray) = "white" {}
+		[MainTexture] _MainTex("MainTex", 2D) = "white" {}
 	}
 
-	// Universal Render Pipeline subshader. If URP is installed this will be used.
 	SubShader
 	{
 		Tags { "RenderType"="Opaque" }
@@ -20,13 +18,12 @@ Shader "Custom/DisplayWorking"
 			HLSLPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
-
-			#include "UnityCG.cginc"
+			
+			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 			struct Attributes
 			{
 				float4 positionOS   : POSITION;
-				float2 uv           : TEXCOORD0;
 
 				UNITY_VERTEX_INPUT_INSTANCE_ID 
 			};
@@ -41,22 +38,20 @@ Shader "Custom/DisplayWorking"
 
 			struct Output {
 				float4 color : SV_Target;
-				float depth : SV_Depth;
 			};
 
-			UNITY_DECLARE_TEX2DARRAY(_MainTex);
-			UNITY_DECLARE_TEX2DARRAY(_DepthTex);
+			TEXTURE2D(_MainTex);
+			SAMPLER(sampler_MainTex);
 
 			Varyings vert(Attributes IN)
 			{
 				Varyings OUT;
 
 				UNITY_SETUP_INSTANCE_ID(IN);
-				// UNITY_INITIALIZE_OUTPUT(IN, OUT);
 				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-				OUT.positionHCS = mul(UNITY_MATRIX_MVP, IN.positionOS);//(IN.positionOS.xyz);
-				OUT.positionSS  = OUT.positionHCS;
+				OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+				OUT.positionSS  = ComputeScreenPos(OUT.positionHCS);
 				return OUT;
 			}
 
@@ -66,10 +61,8 @@ Shader "Custom/DisplayWorking"
 
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
-				half2 uv = (IN.positionSS.xy / IN.positionSS.w) * 0.5 + 0.5;
-				uv.y = 1 - uv.y;
-				OUT.color = UNITY_SAMPLE_TEX2DARRAY(_MainTex,  half3(uv, unity_StereoEyeIndex));
-				OUT.depth = UNITY_SAMPLE_TEX2DARRAY(_DepthTex, half3(uv, unity_StereoEyeIndex));
+				float2 uv = IN.positionSS.xy / IN.positionSS.w;
+				OUT.color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
 
 				return OUT;
 			}
